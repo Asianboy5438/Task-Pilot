@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  passwordHash    String
+  createdAt       DateTime  @default(now())
+  assignments     Assignment[]
+  classes         Class[]
+}
+
+model Class {
+  id            String        @id @default(cuid())
+  userId        String
+  name          String
+  color         String
+  user          User          @relation(fields: [userId], references: [id])
+  assignments   Assignment[]
+}
+
+model Assignment {
+  id            String        @id @default(cuid())
+  userId        String
+  classId       String?
+  title         String
+  notes         String?
+  dueDate       DateTime
+  priority      Priority      @default(MEDIUM)
+  isComplete    Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  user          User          @relation(fields: [userId], references: [id])
+  class         Class?        @relation(fields: [classId], references: [id])
+  aiSuggestion  AiSuggestion?
+}
+
+model AiSuggestion{
+  id              String     @id @default(cuid())
+  assignmentId    String     @unique
+  suggestedStart  DateTime
+  reasoning       String
+  generatedAt     DateTime   @default(now())
+  assignment      Assignment @relation(fields: [assignmentId], references: [id])
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+}
