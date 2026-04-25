@@ -77,7 +77,7 @@ export default function Sidebar() {
   );
 }
 
-function NavItem({ href, icon, label, close }: any) {
+function NavItem({ href, icon, label, close }: { href: string; icon: React.ReactNode; label: string; close: () => void }) {
   return (
     <Link 
       href={href} 

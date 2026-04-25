@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Bell, GraduationCap, ClipboardCheck, Clock, X } from "lucide-react";
 import Link from "next/link";
 
-export default function remindersDropdown() {
+export default function RemindersDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   
   const [alerts, setAlerts] = useState([

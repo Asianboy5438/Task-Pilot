@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Moon, Sun, Mail, Lock, Check, Pencil } from "lucide-react";
+import { Moon, Sun} from "lucide-react";
 
 export default function SettingsPage() {
   // 1. Initialize state as null to avoid "hydration" flickering
@@ -11,12 +11,12 @@ export default function SettingsPage() {
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     const isDark = savedTheme === "dark";
-    setIsDarkMode(isDark);
-    
-    // Apply it to the HTML tag immediately
+
     if (isDark) {
       document.documentElement.setAttribute('data-theme', 'dark');
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsDarkMode(isDark);
   }, []);
 
   // 3. Save to localStorage whenever the user toggles the switch

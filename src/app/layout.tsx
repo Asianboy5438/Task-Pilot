@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import type { Metadata } from "next";
 import "./globals.css";
 import Sidebar from './components/sidebar';
 import RemindersDropdown from './components/remindersDropdown';
