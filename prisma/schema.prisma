@@ -4,12 +4,12 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -44,6 +44,14 @@ model Assignment {
   user          User          @relation(fields: [userId], references: [id])
   class         Class?        @relation(fields: [classId], references: [id])
   aiSuggestion  AiSuggestion?
+}
+
+model Task {
+  id        String   @id @default(cuid())
+  title     String
+  status    String   // e.g., "URGENT" or "TASK"
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 model AiSuggestion{
