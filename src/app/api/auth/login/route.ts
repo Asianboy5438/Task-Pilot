@@ -34,13 +34,19 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
 
-    // Set a session cookie so middleware can detect login
-    response.cookies.set("session_user", user.id, {
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      sameSite: "lax" as const,
+      maxAge: 60 * 60 * 24 * 7,
       path: "/",
+    };
+
+    response.cookies.set("session_user", user.id, cookieOptions);
+    // Store name in a readable cookie for the UI (not httpOnly)
+    response.cookies.set("session_name", encodeURIComponent(user.name), {
+      ...cookieOptions,
+      httpOnly: false,
     });
 
     return response;

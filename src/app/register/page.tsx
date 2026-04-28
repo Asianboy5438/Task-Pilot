@@ -42,7 +42,7 @@ export default function RegisterPage() {
       if (!res.ok) {
         setError(data.error || "Registration failed.");
       } else {
-        router.push("/dashboard");
+        router.push("/");
       }
     } catch {
       setError("Something went wrong. Please try again.");

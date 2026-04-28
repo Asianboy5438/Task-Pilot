@@ -20,10 +20,7 @@ export async function POST(req: NextRequest) {
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      return NextResponse.json(
-        { error: "An account with this email already exists." },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: "An account with this email already exists." }, { status: 409 });
     }
 
     const passwordHash = hashPassword(password);
@@ -36,13 +33,18 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
 
-    // Set session cookie on register too so user is immediately logged in
-    response.cookies.set("session_user", user.id, {
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      sameSite: "lax" as const,
+      maxAge: 60 * 60 * 24 * 7,
       path: "/",
+    };
+
+    response.cookies.set("session_user", user.id, cookieOptions);
+    response.cookies.set("session_name", encodeURIComponent(user.name), {
+      ...cookieOptions,
+      httpOnly: false,
     });
 
     return response;
