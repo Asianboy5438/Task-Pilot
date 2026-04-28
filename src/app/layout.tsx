@@ -19,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     const match = document.cookie.match(/session_name=([^;]+)/);
     if (match) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUserName(decodeURIComponent(match[1]));
     }
   }, [pathname]);
