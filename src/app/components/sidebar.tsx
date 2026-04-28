@@ -9,7 +9,8 @@ import {
   AlertCircle, 
   CheckSquare, 
   Settings,
-  Zap
+  Zap,
+  Calendar
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -64,6 +65,7 @@ export default function Sidebar() {
           <NavItem href="/" icon={<LayoutDashboard size={18} />} label="Dashboard" close={() => setIsOpen(false)} />
           <NavItem href="/urgent" icon={<AlertCircle size={18} />} label="Urgent Tasks" close={() => setIsOpen(false)} />
           <NavItem href="/tasks" icon={<CheckSquare size={18} />} label="Tasks" close={() => setIsOpen(false)} />
+          <NavItem href="/calendar" icon={<Calendar size={18} />} label="Calendar" close={() => setIsOpen(false)} />
           
           <div className="my-4 border-t border-[var(--border-color)]" />
           
