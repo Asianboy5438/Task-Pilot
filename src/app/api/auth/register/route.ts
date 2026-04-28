@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     };
 
     response.cookies.set("session_user", user.id, cookieOptions);
-    response.cookies.set("session_name", encodeURIComponent(user.name), {
+    response.cookies.set("session_name", user.name, {
       ...cookieOptions,
       httpOnly: false,
     });
