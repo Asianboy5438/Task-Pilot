@@ -142,15 +142,33 @@ export default function CalendarPage() {
                   {day}
                 </div>
                 <div className="space-y-1">
-                  {dayTasks.slice(0, 3).map(task => (
-                    <div
-                      key={task.id}
-                      onClick={e => { e.stopPropagation(); deleteTask(task.id); }}
-                      className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border truncate cursor-pointer hover:opacity-70 transition-opacity ${PRIORITY_COLORS[task.priority]}`}
-                    >
-                      {task.text}
-                    </div>
-                  ))}
+                  {/* Show only 2 tasks + count if > 3, otherwise show up to 3 */}
+                  {dayTasks.length > 3 ? (
+                    <>
+                      {dayTasks.slice(0, 2).map(task => (
+                        <div
+                          key={task.id}
+                          onClick={e => { e.stopPropagation(); deleteTask(task.id); }}
+                          className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border truncate cursor-pointer hover:opacity-70 transition-opacity ${PRIORITY_COLORS[task.priority]}`}
+                        >
+                          {task.text}
+                        </div>
+                      ))}
+                      <div className="text-[9px] font-bold text-slate-400 px-1.5 py-0.5">
+                        + {dayTasks.length - 2} more
+                      </div>
+                    </>
+                  ) : (
+                    dayTasks.slice(0, 3).map(task => (
+                      <div
+                        key={task.id}
+                        onClick={e => { e.stopPropagation(); deleteTask(task.id); }}
+                        className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border truncate cursor-pointer hover:opacity-70 transition-opacity ${PRIORITY_COLORS[task.priority]}`}
+                      >
+                        {task.text}
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             );
@@ -200,7 +218,6 @@ export default function CalendarPage() {
                 />
               </div>
 
-              {/* Priority Dropdown Section - Fixed individual option colors */}
               <div className="space-y-2">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Priority</h4>
                 <div className="relative">
