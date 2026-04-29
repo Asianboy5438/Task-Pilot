@@ -313,7 +313,7 @@ export default function CalendarPage() {
                   <div className="text-center py-16 text-slate-400">
                     <div className="text-4xl mb-3">📭</div>
                     <p className="font-bold text-sm">No tasks for this day</p>
-                    <p className="text-xs mt-1">Click "Add Task" to schedule something</p>
+                    <p className="text-xs mt-1">Click &quot;Add Task&quot; to schedule something</p>
                   </div>
                 ) : (
                   dayTasks.map(task => (
