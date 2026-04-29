@@ -112,7 +112,6 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Weekday headers */}
         <div className="grid grid-cols-7 gap-2 mb-2">
           {WEEKDAYS.map(d => (
             <div key={d} className="text-center text-[11px] font-bold text-slate-500 uppercase tracking-widest py-2">
@@ -121,7 +120,6 @@ export default function CalendarPage() {
           ))}
         </div>
 
-        {/* Calendar Grid */}
         <div className="grid grid-cols-7 gap-2">
           {cells.map((day, idx) => {
             if (day === null) return <div key={`empty-${idx}`} />;
@@ -160,7 +158,6 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* Modal with Dropdown and Subheading */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center px-4">
           <div className="bg-[var(--bg-header)] border border-[var(--border-color)] rounded-3xl shadow-2xl w-full max-w-md p-8 relative overflow-hidden">
@@ -203,21 +200,21 @@ export default function CalendarPage() {
                 />
               </div>
 
-              {/* Priority Dropdown Section */}
+              {/* Priority Dropdown Section - Fixed individual option colors */}
               <div className="space-y-2">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Priority</h4>
                 <div className="relative">
                   <select
                     value={newTaskPriority}
                     onChange={(e) => setNewTaskPriority(e.target.value as "HIGH" | "MEDIUM" | "LOW")}
-                    className={`w-full p-4 pr-10 rounded-2xl border bg-white font-bold text-sm uppercase tracking-widest outline-none appearance-none cursor-pointer transition-all
+                    className={`w-full p-4 pr-10 rounded-2xl border font-bold text-sm uppercase tracking-widest outline-none appearance-none cursor-pointer transition-all
                       ${newTaskPriority === 'HIGH' ? 'border-red-200 text-red-500 bg-red-50/30' : 
                         newTaskPriority === 'MEDIUM' ? 'border-amber-200 text-amber-500 bg-amber-50/30' : 
                         'border-emerald-200 text-emerald-500 bg-emerald-50/30'}`}
                   >
-                    <option value="HIGH">High</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="LOW">Low</option>
+                    <option value="HIGH" className="text-red-500 bg-white">High</option>
+                    <option value="MEDIUM" className="text-amber-500 bg-white">Medium</option>
+                    <option value="LOW" className="text-emerald-500 bg-white">Low</option>
                   </select>
                   <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
                 </div>
