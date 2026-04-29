@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, X, ChevronDown } from "lucide-react";
 
 const MONTHS = ["January","February","March","April","May","June",
                 "July","August","September","October","November","December"];
@@ -30,7 +30,7 @@ export default function CalendarPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
   
-  // Form States matching Image 2
+  // Form States
   const [newTaskText, setNewTaskText] = useState("");
   const [newTaskClass, setNewTaskClass] = useState("");
   const [newTaskDetails, setNewTaskDetails] = useState("");
@@ -57,7 +57,6 @@ export default function CalendarPage() {
   const addTask = () => {
     if (!newTaskText.trim() || !selectedDate) return;
     
-    // Deterministic ID to avoid hydration/purity errors
     const newId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : Date.now();
 
     setTasks(prev => [...prev, {
@@ -69,7 +68,6 @@ export default function CalendarPage() {
       priority: newTaskPriority,
     }]);
 
-    // Reset Form
     setNewTaskText("");
     setNewTaskClass("");
     setNewTaskDetails("");
@@ -162,12 +160,11 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* RE-STYLED Add Task Modal (Matching Image 2 Style) */}
+      {/* Modal with Dropdown and Subheading */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center px-4">
           <div className="bg-[var(--bg-header)] border border-[var(--border-color)] rounded-3xl shadow-2xl w-full max-w-md p-8 relative overflow-hidden">
             
-            {/* Close Button */}
             <button 
               onClick={() => setShowModal(false)} 
               className="absolute top-6 right-6 text-slate-300 hover:text-slate-500 transition-colors"
@@ -175,9 +172,7 @@ export default function CalendarPage() {
               <X size={20} />
             </button>
 
-            {/* Form Fields Styled like Image 2 */}
             <div className="space-y-6 pt-2">
-              
               <div className="border-b border-slate-100 pb-1">
                 <input
                   type="text"
@@ -208,22 +203,23 @@ export default function CalendarPage() {
                 />
               </div>
 
-              {/* Priority Selector */}
-              <div className="pt-2">
-                <div className="flex gap-2">
-                  {(["HIGH","MEDIUM","LOW"] as const).map(p => (
-                    <button
-                      key={p}
-                      onClick={() => setNewTaskPriority(p)}
-                      className={`flex-1 py-3 rounded-2xl text-xs font-black border transition-all uppercase tracking-widest
-                        ${newTaskPriority === p
-                          ? PRIORITY_COLORS[p] + " border-current ring-2 ring-offset-2 ring-current/10"
-                          : "border-slate-100 text-slate-300 hover:border-slate-200"
-                        }`}
-                    >
-                      {p}
-                    </button>
-                  ))}
+              {/* Priority Dropdown Section */}
+              <div className="space-y-2">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Priority</h4>
+                <div className="relative">
+                  <select
+                    value={newTaskPriority}
+                    onChange={(e) => setNewTaskPriority(e.target.value as "HIGH" | "MEDIUM" | "LOW")}
+                    className={`w-full p-4 pr-10 rounded-2xl border bg-white font-bold text-sm uppercase tracking-widest outline-none appearance-none cursor-pointer transition-all
+                      ${newTaskPriority === 'HIGH' ? 'border-red-200 text-red-500 bg-red-50/30' : 
+                        newTaskPriority === 'MEDIUM' ? 'border-amber-200 text-amber-500 bg-amber-50/30' : 
+                        'border-emerald-200 text-emerald-500 bg-emerald-50/30'}`}
+                  >
+                    <option value="HIGH">High</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="LOW">Low</option>
+                  </select>
+                  <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
                 </div>
               </div>
 
