@@ -6,8 +6,6 @@ import {
   Menu, 
   X, 
   LayoutDashboard, 
-  AlertCircle, 
-  CheckSquare, 
   Settings,
   Zap,
   Calendar
@@ -63,8 +61,7 @@ export default function Sidebar() {
           <p className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Navigation</p>
           
           <NavItem href="/" icon={<LayoutDashboard size={18} />} label="Dashboard" close={() => setIsOpen(false)} />
-          <NavItem href="/urgent" icon={<AlertCircle size={18} />} label="Urgent Tasks" close={() => setIsOpen(false)} />
-          <NavItem href="/tasks" icon={<CheckSquare size={18} />} label="Tasks" close={() => setIsOpen(false)} />
+          {/* Urgent Tasks and Tasks removed for a cleaner experience */}
           <NavItem href="/calendar" icon={<Calendar size={18} />} label="Calendar" close={() => setIsOpen(false)} />
           
           <div className="my-4 border-t border-[var(--border-color)]" />
@@ -72,8 +69,6 @@ export default function Sidebar() {
           <p className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Account</p>
           <NavItem href="/settings" icon={<Settings size={18} />} label="Settings" close={() => setIsOpen(false)} />
         </nav>
-
-        {/* Sidebar Footer Removed - Clean empty space at bottom */}
       </aside>
     </>
   );
