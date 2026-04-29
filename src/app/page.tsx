@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Circle, ChevronDown, Trash2, Edit3, X } from "lucide-react";
+import { Circle, CheckCircle2, ChevronDown, Trash2, Edit3, X } from "lucide-react";
 
 interface Task {
   id: number;
@@ -27,7 +27,7 @@ export default function Home() {
   // Edit State
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  // Load from localStorage safely on mount
+  // Hydrate from localStorage
   useEffect(() => {
     const saved = localStorage.getItem("task-pilot-storage");
     if (saved) {
@@ -40,7 +40,7 @@ export default function Home() {
     setIsLoaded(true);
   }, []);
 
-  // Sync back to localStorage whenever tasks change
+  // Sync to localStorage
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem("task-pilot-storage", JSON.stringify(tasks));
@@ -63,11 +63,11 @@ export default function Home() {
       setEditingId(null);
     } else {
       // Create new task
-      // eslint-disable-next-line react-hooks/purity
-      const uniqueId = Date.now(); 
+      // Pure ID Generation: Avoids Date.now() build errors
+      const newId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
       
       const newTask: Task = {
-        id: uniqueId,
+        id: newId,
         title,
         class: className || "General",
         description: description || "",
@@ -80,6 +80,12 @@ export default function Home() {
     }
 
     resetForm();
+  };
+
+  const toggleComplete = (id: number) => {
+    setTasks(prev => prev.map(t => 
+      t.id === id ? { ...t, completed: !t.completed } : t
+    ));
   };
 
   const startEdit = (task: Task) => {
@@ -124,11 +130,26 @@ export default function Home() {
             <p className="text-slate-400 font-medium italic">No tasks found. Create one to get started!</p>
           )}
           {tasks.map((task) => (
-            <div key={task.id} className="group p-5 border border-[var(--border-color)] rounded-2xl bg-[var(--bg-header)] flex items-center justify-between hover:border-indigo-300 transition-all">
+            <div 
+              key={task.id} 
+              className={`group p-5 border border-[var(--border-color)] rounded-2xl bg-[var(--bg-header)] flex items-center justify-between hover:border-indigo-300 transition-all ${task.completed ? 'opacity-60 bg-slate-50/50' : ''}`}
+            >
               <div className="flex items-center gap-5">
-                <Circle size={24} className="text-slate-200" />
+                <button 
+                  onClick={() => toggleComplete(task.id)}
+                  className="transition-transform active:scale-90"
+                >
+                  {task.completed ? (
+                    <CheckCircle2 size={26} className="text-emerald-500" />
+                  ) : (
+                    <Circle size={26} className="text-slate-200 hover:text-indigo-300" />
+                  )}
+                </button>
+                
                 <div className="flex flex-col">
-                  <span className="text-lg font-bold text-[var(--text-strong)]">{task.title}</span>
+                  <span className={`text-lg font-bold text-[var(--text-strong)] transition-all ${task.completed ? 'line-through text-slate-400' : ''}`}>
+                    {task.title}
+                  </span>
                   <div className="flex items-center gap-3 mt-1 text-[10px]">
                     <span className="font-black text-slate-400 uppercase">{task.class}</span>
                     <span className={`px-2 py-0.5 rounded border uppercase ${getPriorityColor(task.priority)}`}>
@@ -219,7 +240,7 @@ export default function Home() {
         <button 
           onClick={handleSubmit} 
           className={`w-full py-5 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl transition-all shadow-lg ${
-            editingId ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700'
+            editingId ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100'
           }`}
         >
           {editingId ? "UPDATE TASK ✓" : "CREATE TASK +"}
