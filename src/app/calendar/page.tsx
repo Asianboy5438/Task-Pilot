@@ -10,6 +10,8 @@ const WEEKDAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 interface Task {
   id: number;
   text: string;
+  class?: string;
+  details?: string;
   date: string; // YYYY-MM-DD
   priority: "HIGH" | "MEDIUM" | "LOW";
 }
@@ -27,7 +29,11 @@ export default function CalendarPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
+  
+  // Form States matching Image 2
   const [newTaskText, setNewTaskText] = useState("");
+  const [newTaskClass, setNewTaskClass] = useState("");
+  const [newTaskDetails, setNewTaskDetails] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState<"HIGH"|"MEDIUM"|"LOW">("MEDIUM");
 
   const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -50,13 +56,23 @@ export default function CalendarPage() {
 
   const addTask = () => {
     if (!newTaskText.trim() || !selectedDate) return;
+    
+    // Deterministic ID to avoid hydration/purity errors
+    const newId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : Date.now();
+
     setTasks(prev => [...prev, {
-      id: Date.now(),
+      id: newId,
       text: newTaskText.trim(),
+      class: newTaskClass.trim(),
+      details: newTaskDetails.trim(),
       date: selectedDate,
       priority: newTaskPriority,
     }]);
+
+    // Reset Form
     setNewTaskText("");
+    setNewTaskClass("");
+    setNewTaskDetails("");
     setNewTaskPriority("MEDIUM");
     setShowModal(false);
   };
@@ -70,14 +86,13 @@ export default function CalendarPage() {
 
   const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
 
-  // Build grid cells (empty + day cells)
   const cells = [
     ...Array(firstDay).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--bg-main)] p-6 transition-colors duration-300">
+    <div className="min-h-screen bg-[var(--bg-main)] p-6 transition-colors duration-300 font-sans">
       <div className="max-w-5xl mx-auto">
 
         {/* Header */}
@@ -87,19 +102,13 @@ export default function CalendarPage() {
             <p className="text-slate-500 mt-1 text-sm">Click any day to add an assignment.</p>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={prevMonth}
-              className="p-2 rounded-lg hover:bg-[var(--bg-avatar)] text-slate-400 hover:text-[var(--text-strong)] transition-colors"
-            >
+            <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-[var(--bg-avatar)] text-slate-400 hover:text-[var(--text-strong)] transition-colors">
               <ChevronLeft size={20} />
             </button>
             <span className="text-lg font-bold text-[var(--text-strong)] w-44 text-center">
               {MONTHS[currentMonth]} {currentYear}
             </span>
-            <button
-              onClick={nextMonth}
-              className="p-2 rounded-lg hover:bg-[var(--bg-avatar)] text-slate-400 hover:text-[var(--text-strong)] transition-colors"
-            >
+            <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-[var(--bg-avatar)] text-slate-400 hover:text-[var(--text-strong)] transition-colors">
               <ChevronRight size={20} />
             </button>
           </div>
@@ -118,7 +127,6 @@ export default function CalendarPage() {
         <div className="grid grid-cols-7 gap-2">
           {cells.map((day, idx) => {
             if (day === null) return <div key={`empty-${idx}`} />;
-
             const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
             const dayTasks = getTasksForDate(dateStr);
             const isToday = dateStr === todayStr;
@@ -133,83 +141,84 @@ export default function CalendarPage() {
                     : "border-[var(--border-color)] bg-[var(--bg-header)] hover:border-indigo-500/50 hover:bg-[var(--bg-avatar)]"
                   }`}
               >
-                {/* Day number */}
                 <div className={`text-xs font-bold mb-1 w-6 h-6 flex items-center justify-center rounded-full
                   ${isToday ? "bg-indigo-600 text-white" : "text-slate-400 group-hover:text-[var(--text-strong)]"}`}>
                   {day}
                 </div>
-
-                {/* Tasks */}
                 <div className="space-y-1">
                   {dayTasks.slice(0, 3).map(task => (
                     <div
                       key={task.id}
                       onClick={e => { e.stopPropagation(); deleteTask(task.id); }}
                       className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border truncate cursor-pointer hover:opacity-70 transition-opacity ${PRIORITY_COLORS[task.priority]}`}
-                      title={`${task.text} (click to delete)`}
                     >
                       {task.text}
                     </div>
                   ))}
-                  {dayTasks.length > 3 && (
-                    <div className="text-[10px] text-slate-500 pl-1">+{dayTasks.length - 3} more</div>
-                  )}
                 </div>
-
-                {/* Add hint */}
-                {dayTasks.length === 0 && (
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center mt-2">
-                    <Plus size={12} className="text-slate-600" />
-                  </div>
-                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Add Task Modal */}
+      {/* RE-STYLED Add Task Modal (Matching Image 2 Style) */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center px-4">
-          <div className="bg-[var(--bg-header)] border border-[var(--border-color)] rounded-2xl shadow-2xl w-full max-w-sm p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="font-black text-[var(--text-strong)]">Add Assignment</h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-red-400 transition-colors">
-                <X size={18} />
-              </button>
-            </div>
+          <div className="bg-[var(--bg-header)] border border-[var(--border-color)] rounded-3xl shadow-2xl w-full max-w-md p-8 relative overflow-hidden">
+            
+            {/* Close Button */}
+            <button 
+              onClick={() => setShowModal(false)} 
+              className="absolute top-6 right-6 text-slate-300 hover:text-slate-500 transition-colors"
+            >
+              <X size={20} />
+            </button>
 
-            <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-4">{selectedDate}</p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">
-                  Assignment Title
-                </label>
+            {/* Form Fields Styled like Image 2 */}
+            <div className="space-y-6 pt-2">
+              
+              <div className="border-b border-slate-100 pb-1">
                 <input
                   type="text"
                   value={newTaskText}
                   onChange={e => setNewTaskText(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && addTask()}
-                  placeholder="e.g. CGT 390 Checkpoint 3"
-                  className="w-full px-3 py-2.5 rounded-lg bg-[var(--bg-main)] border border-[var(--border-color)] text-[var(--text-strong)] placeholder-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                  placeholder="Task Title..."
+                  className="w-full text-3xl font-black bg-transparent text-[var(--text-strong)] placeholder-slate-300 outline-none"
                   autoFocus
                 />
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">
-                  Priority
-                </label>
+              <div className="border-b border-slate-100 pb-1">
+                <input
+                  type="text"
+                  value={newTaskClass}
+                  onChange={e => setNewTaskClass(e.target.value)}
+                  placeholder="Class (e.g. CGT 390)"
+                  className="w-full text-lg font-medium bg-transparent text-slate-500 placeholder-slate-300 outline-none"
+                />
+              </div>
+
+              <div className="relative">
+                <textarea
+                  value={newTaskDetails}
+                  onChange={e => setNewTaskDetails(e.target.value)}
+                  placeholder="Add task details..."
+                  className="w-full h-32 p-4 rounded-2xl bg-transparent border border-slate-200 text-slate-600 placeholder-slate-300 outline-none resize-none focus:border-indigo-400 transition-colors"
+                />
+              </div>
+
+              {/* Priority Selector */}
+              <div className="pt-2">
                 <div className="flex gap-2">
                   {(["HIGH","MEDIUM","LOW"] as const).map(p => (
                     <button
                       key={p}
                       onClick={() => setNewTaskPriority(p)}
-                      className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all
+                      className={`flex-1 py-3 rounded-2xl text-xs font-black border transition-all uppercase tracking-widest
                         ${newTaskPriority === p
-                          ? PRIORITY_COLORS[p] + " scale-105"
-                          : "border-[var(--border-color)] text-slate-500 hover:border-slate-500"
+                          ? PRIORITY_COLORS[p] + " border-current ring-2 ring-offset-2 ring-current/10"
+                          : "border-slate-100 text-slate-300 hover:border-slate-200"
                         }`}
                     >
                       {p}
@@ -221,10 +230,16 @@ export default function CalendarPage() {
               <button
                 onClick={addTask}
                 disabled={!newTaskText.trim()}
-                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-colors"
+                className="w-full py-4 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-30 text-white text-sm font-black uppercase tracking-[0.2em] rounded-2xl transition-all shadow-lg shadow-indigo-100"
               >
                 Add to Calendar
               </button>
+              
+              <div className="text-center">
+                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                  Scheduled for: {selectedDate}
+                </span>
+              </div>
             </div>
           </div>
         </div>
