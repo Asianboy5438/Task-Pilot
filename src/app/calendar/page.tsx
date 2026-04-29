@@ -89,6 +89,13 @@ export default function CalendarPage() {
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
 
+  // Helper to format YYYY-MM-DD to MM/DD/YYYY
+  const formatDisplayDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    const [y, m, d] = dateStr.split("-");
+    return `${m}/${d}/${y}`;
+  };
+
   return (
     <div className="min-h-screen bg-[var(--bg-main)] p-6 transition-colors duration-300 font-sans">
       <div className="max-w-5xl mx-auto">
@@ -142,7 +149,6 @@ export default function CalendarPage() {
                   {day}
                 </div>
                 <div className="space-y-1">
-                  {/* Show only 2 tasks + count if > 3, otherwise show up to 3 */}
                   {dayTasks.length > 3 ? (
                     <>
                       {dayTasks.slice(0, 2).map(task => (
@@ -247,7 +253,7 @@ export default function CalendarPage() {
               
               <div className="text-center">
                 <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
-                  Scheduled for: {selectedDate}
+                  Scheduled for: {formatDisplayDate(selectedDate)}
                 </span>
               </div>
             </div>
