@@ -9,8 +9,8 @@ export interface Task {
   description: string;
   priority: "High" | "Medium" | "Low";
   completed: boolean;
-  dueDate: string;   // YYYY-MM-DD
-  dueTime: string;   // HH:MM (24hr), empty string if none
+  dueDate: string;
+  dueTime: string;
 }
 
 interface TaskContextValue {
@@ -21,7 +21,16 @@ interface TaskContextValue {
   toggleComplete: (id: number) => void;
 }
 
-const TaskContext = createContext<TaskContextValue | null>(null);
+const noOp = () => {};
+const defaultValue: TaskContextValue = {
+  tasks: [],
+  addTask: noOp,
+  updateTask: noOp,
+  deleteTask: noOp,
+  toggleComplete: noOp,
+};
+
+const TaskContext = createContext<TaskContextValue>(defaultValue);
 
 function loadInitialTasks(): Task[] {
   if (typeof window === "undefined") return [];
@@ -37,7 +46,6 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>(loadInitialTasks);
   const mountedRef = useRef(false);
 
-  // Persist to localStorage on every change, skipping the initial mount read
   const persist = (next: Task[]) => {
     if (!mountedRef.current) { mountedRef.current = true; }
     localStorage.setItem("task-pilot-storage", JSON.stringify(next));
@@ -85,9 +93,6 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Custom hook — throws if used outside the provider
 export function useTasks() {
-  const ctx = useContext(TaskContext);
-  if (!ctx) throw new Error("useTasks must be used inside <TaskProvider>");
-  return ctx;
+  return useContext(TaskContext);
 }
