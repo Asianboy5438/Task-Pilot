@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Circle, CheckCircle2, Pencil, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Circle, CheckCircle2, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 
 interface Task {
   id: number;
   title: string;
   class: string;
+  description: string;
   priority: "High" | "Medium" | "Low";
   completed: boolean;
   dueDate: string;
@@ -14,22 +15,19 @@ interface Task {
 
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([
-    { id: 1, title: "Finish Heuristic Evaluation", class: "Starbucks Redesign", priority: "High", completed: false, dueDate: "04/25" },
-    { id: 2, title: "Update Portfolio Layout", class: "Web Programming", priority: "Medium", completed: false, dueDate: "04/28" },
+    { id: 1, title: "Finish Heuristic Evaluation", class: "Starbucks Redesign", description: "Audit friction in checkout flow.", priority: "High", completed: false, dueDate: "04/25" },
   ]);
 
   // --- Task Input States ---
   const [title, setTitle] = useState("");
   const [className, setClassName] = useState("");
+  const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<"High" | "Medium" | "Low">("Medium");
   
   // --- Calendar & Time States ---
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHour, setSelectedHour] = useState("12");
   const [selectedMin, setSelectedMin] = useState("00");
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   // Calendar Logic
   const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
@@ -43,6 +41,7 @@ export default function Home() {
       id: Date.now(),
       title,
       class: className || "General",
+      description,
       priority,
       completed: false,
       dueDate: `${selectedDate.getMonth() + 1}/${selectedDate.getDate()}`,
@@ -50,6 +49,7 @@ export default function Home() {
     setTasks([newTask, ...tasks]);
     setTitle("");
     setClassName("");
+    setDescription("");
     setPriority("Medium");
   };
 
@@ -60,13 +60,13 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-full bg-[var(--bg-main)] transition-colors duration-300 relative">
+    <div className="flex h-full bg-[var(--bg-main)] transition-colors duration-300 relative overflow-hidden">
       
       {/* Main Checklist Column */}
       <section className="flex-1 p-10 overflow-y-auto">
         <header className="mb-10">
           <h2 className="text-4xl font-black tracking-tighter text-[var(--text-strong)]">Task Overview</h2>
-          <p className="text-slate-500 font-medium">Manage your progress and daily mandates.</p>
+          <p className="text-slate-500 font-medium text-sm">Manage your progress and daily tasks.</p>
         </header>
 
         <div className="grid gap-4">
@@ -92,98 +92,110 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- RIGHT SIDEBAR: TASK CONFIGURATION --- */}
-      <aside className="w-[400px] p-8 bg-[var(--bg-header)] border-l border-[var(--border-color)] flex flex-col overflow-y-auto">
-        <div className="flex items-center gap-2 mb-8">
-          <div className="p-2 bg-indigo-600 rounded-lg text-white"><Plus size={18} strokeWidth={3} /></div>
-          <h3 className="font-black text-xs uppercase tracking-[0.2em] text-[var(--text-strong)]">New Mandate</h3>
+      {/* --- RIGHT SIDEBAR: TASK CONFIGURATION (COMPACTED) --- */}
+      <aside className="w-[360px] p-6 bg-[var(--bg-header)] border-l border-[var(--border-color)] flex flex-col h-full overflow-y-auto no-scrollbar">
+        <div className="flex items-center gap-2 mb-6">
+          <div className="p-1.5 bg-indigo-600 rounded-lg text-white"><Plus size={16} strokeWidth={3} /></div>
+          <h3 className="font-black text-xs uppercase tracking-[0.2em] text-[var(--text-strong)]">Create Task</h3>
         </div>
 
-        <div className="space-y-6 flex-1">
-          {/* Inputs */}
-          <div className="space-y-4">
+        <div className="space-y-4 flex-1">
+          {/* Header Inputs */}
+          <div className="space-y-3">
             <input 
-              className="w-full text-xl font-bold bg-transparent border-b border-slate-100 outline-none focus:border-indigo-500 pb-2" 
+              className="w-full text-lg font-bold bg-transparent border-b border-slate-100 outline-none focus:border-indigo-500 pb-1 text-[var(--text-strong)] placeholder:text-slate-300" 
               placeholder="Task Title..." value={title} onChange={(e) => setTitle(e.target.value)}
             />
             <input 
-              className="w-full text-sm font-semibold bg-transparent border-b border-slate-100 outline-none focus:border-indigo-500 pb-2 text-slate-500" 
-              placeholder="Classification..." value={className} onChange={(e) => setClassName(e.target.value)}
+              className="w-full text-xs font-semibold bg-transparent border-b border-slate-100 outline-none focus:border-indigo-500 pb-1 text-slate-500 placeholder:text-slate-300" 
+              placeholder="Classification (e.g. Starbucks Redesign)" value={className} onChange={(e) => setClassName(e.target.value)}
             />
           </div>
 
-          {/* Time Selection Dropdowns */}
-          <div className="space-y-3">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Time Configuration</label>
+          {/* Description Box */}
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Description</label>
+            <textarea 
+              className="w-full text-xs font-medium bg-[var(--bg-avatar)] border border-slate-100 rounded-xl p-3 outline-none focus:border-indigo-500 min-h-[70px] resize-none text-slate-600"
+              placeholder="Add task details..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+
+          {/* Priority Level Dropdown */}
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Urgency Level</label>
+            <div className="relative">
+              <select 
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as any)}
+                className={`w-full p-2.5 rounded-xl border appearance-none font-bold text-[10px] uppercase tracking-widest outline-none cursor-pointer transition-all ${getPriorityColor(priority)}`}
+              >
+                <option value="High">High Priority</option>
+                <option value="Medium">Medium Priority</option>
+                <option value="Low">Low Priority</option>
+              </select>
+              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+            </div>
+          </div>
+
+          {/* Time Picker */}
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Target Time</label>
             <div className="flex gap-2">
               <select 
                 value={selectedHour} 
                 onChange={(e) => setSelectedHour(e.target.value)}
-                className="flex-1 p-3 rounded-xl bg-[var(--bg-avatar)] border border-slate-100 font-bold text-[var(--text-strong)] outline-none appearance-none text-center cursor-pointer"
+                className="flex-1 p-2 rounded-xl bg-[var(--bg-avatar)] border border-slate-100 font-bold text-[var(--text-strong)] outline-none text-center text-xs"
               >
                 {Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0')).map(h => <option key={h} value={h}>{h}</option>)}
               </select>
-              <span className="flex items-center font-black text-slate-300">:</span>
               <select 
                 value={selectedMin} 
                 onChange={(e) => setSelectedMin(e.target.value)}
-                className="flex-1 p-3 rounded-xl bg-[var(--bg-avatar)] border border-slate-100 font-bold text-[var(--text-strong)] outline-none appearance-none text-center cursor-pointer"
+                className="flex-1 p-2 rounded-xl bg-[var(--bg-avatar)] border border-slate-100 font-bold text-[var(--text-strong)] outline-none text-center text-xs"
               >
                 {["00", "15", "30", "45"].map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
           </div>
 
-          {/* Calendar Picker */}
-          <div className="p-5 border border-slate-100 rounded-2xl bg-[var(--bg-avatar)]">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-[11px] font-black uppercase tracking-widest text-indigo-600">
-                {selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+          {/* Calendar Picker (Compacted) */}
+          <div className="p-3 border border-slate-100 rounded-2xl bg-[var(--bg-avatar)]">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[9px] font-black uppercase tracking-widest text-indigo-600">
+                {selectedDate.toLocaleString('default', { month: 'short', year: 'numeric' })}
               </span>
               <div className="flex gap-1">
-                <button onClick={() => setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() - 1)))} className="p-1 hover:bg-white rounded-md text-slate-400"><ChevronLeft size={16}/></button>
-                <button onClick={() => setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() + 1)))} className="p-1 hover:bg-white rounded-md text-slate-400"><ChevronRight size={16}/></button>
+                <button onClick={() => setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() - 1)))} className="p-1 hover:bg-white rounded-md text-slate-400"><ChevronLeft size={12}/></button>
+                <button onClick={() => setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() + 1)))} className="p-1 hover:bg-white rounded-md text-slate-400"><ChevronRight size={12}/></button>
               </div>
             </div>
             
             <div className="grid grid-cols-7 gap-1 text-center">
-              {['S','M','T','W','T','F','S'].map(day => <span key={day} className="text-[9px] font-black text-slate-300">{day}</span>)}
+              {['S','M','T','W','T','F','S'].map(day => <span key={day} className="text-[8px] font-black text-slate-300">{day}</span>)}
               {blanks.map(b => <span key={`b-${b}`} />)}
               {days.map(d => (
                 <button 
                   key={d} 
                   onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), d))}
-                  className={`py-2 text-[10px] font-bold rounded-lg transition-all ${selectedDate.getDate() === d ? 'bg-indigo-600 text-white shadow-md' : 'hover:bg-white text-slate-500'}`}
+                  className={`py-1 text-[9px] font-bold rounded-md transition-all ${selectedDate.getDate() === d ? 'bg-indigo-600 text-white shadow-sm' : 'hover:bg-white text-slate-500'}`}
                 >
                   {d}
                 </button>
               ))}
             </div>
           </div>
-
-          {/* Priority */}
-          <div className="space-y-3">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Priority Level</label>
-            <div className="flex border border-slate-100 rounded-xl overflow-hidden p-1 gap-1">
-              {(["High", "Medium", "Low"] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPriority(p)}
-                  className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${priority === p ? getPriorityColor(p) + " border shadow-sm" : "text-slate-400 hover:bg-slate-50 border-transparent border"}`}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
+        {/* Action Button */}
         <button 
           onClick={addTask}
-          className="w-full mt-8 py-5 bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3"
+          className="w-full mt-6 py-4 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
         >
           <span>Create Task</span>
-          <Plus size={18} strokeWidth={3} />
+          <Plus size={14} strokeWidth={3} />
         </button>
       </aside>
     </div>
