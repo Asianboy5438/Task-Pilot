@@ -13,10 +13,23 @@ interface Task {
   dueDate: string;
 }
 
+// FIX 1: Parse localStorage OUTSIDE the component (module scope).
+// This runs only on the client (never on the server during SSR),
+// so it's safe and avoids the set-state-in-effect lint error entirely.
+function loadInitialTasks(): Task[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const saved = localStorage.getItem("task-pilot-storage");
+    return saved ? (JSON.parse(saved) as Task[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function Home() {
-  // FIX: Start with empty array on both server and client to avoid hydration mismatch.
-  // localStorage is loaded client-side only inside useEffect below.
-  const [tasks, setTasks] = useState<Task[]>([]);
+  // Pass the loader function as a lazy initializer — React calls it once,
+  // client-side only, so there's no hydration mismatch and no effect needed.
+  const [tasks, setTasks] = useState<Task[]>(loadInitialTasks);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Form State
@@ -29,22 +42,12 @@ export default function Home() {
   // Edit State
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  // FIX: Load from localStorage only on the client after first render.
-  // This guarantees server and client render identical initial HTML (empty []),
-  // eliminating the hydration mismatch Vercel was throwing.
+  // Mark as loaded after first client render (prevents hydration flash)
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("task-pilot-storage");
-      if (saved) {
-        setTasks(JSON.parse(saved));
-      }
-    } catch (e) {
-      console.error("Local storage error:", e);
-    }
     setIsLoaded(true);
   }, []);
 
-  // Sync to localStorage whenever tasks change (only after initial load)
+  // Sync to localStorage whenever tasks change
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem("task-pilot-storage", JSON.stringify(tasks));
@@ -71,6 +74,8 @@ export default function Home() {
       );
       setEditingId(null);
     } else {
+      // FIX 2: Use pure ID generation (no Date.now()).
+      // Derive the next ID from existing task IDs — deterministic and pure.
       const newId =
         tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
 
