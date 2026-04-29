@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Circle, CheckCircle2, ChevronDown, Trash2, Edit3, X } from "lucide-react";
 
 interface Task {
@@ -13,9 +13,8 @@ interface Task {
   dueDate: string;
 }
 
-// FIX 1: Parse localStorage OUTSIDE the component (module scope).
-// This runs only on the client (never on the server during SSR),
-// so it's safe and avoids the set-state-in-effect lint error entirely.
+// Load from localStorage at module scope — runs client-side only, never on the server.
+// Passed as a lazy initializer to useState so no useEffect + setState is needed.
 function loadInitialTasks(): Task[] {
   if (typeof window === "undefined") return [];
   try {
@@ -27,10 +26,11 @@ function loadInitialTasks(): Task[] {
 }
 
 export default function Home() {
-  // Pass the loader function as a lazy initializer — React calls it once,
-  // client-side only, so there's no hydration mismatch and no effect needed.
   const [tasks, setTasks] = useState<Task[]>(loadInitialTasks);
-  const [isLoaded, setIsLoaded] = useState(false);
+
+  // useRef instead of useState — updating a ref never triggers a re-render,
+  // so it never counts as "setState inside an effect".
+  const mountedRef = useRef(false);
 
   // Form State
   const [title, setTitle] = useState("");
@@ -42,18 +42,15 @@ export default function Home() {
   // Edit State
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  // Mark as loaded after first client render (prevents hydration flash)
+  // Sync to localStorage. On the very first run (mount) we skip the write
+  // by checking the ref, then flip it — no setState anywhere in the effect.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsLoaded(true);
-  }, []);
-
-  // Sync to localStorage whenever tasks change
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem("task-pilot-storage", JSON.stringify(tasks));
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
     }
-  }, [tasks, isLoaded]);
+    localStorage.setItem("task-pilot-storage", JSON.stringify(tasks));
+  }, [tasks]);
 
   const handleSubmit = () => {
     if (!title.trim()) return;
@@ -75,8 +72,6 @@ export default function Home() {
       );
       setEditingId(null);
     } else {
-      // FIX 2: Use pure ID generation (no Date.now()).
-      // Derive the next ID from existing task IDs — deterministic and pure.
       const newId =
         tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
 
@@ -133,6 +128,12 @@ export default function Home() {
     return "text-emerald-500 bg-emerald-50 border-emerald-100";
   };
 
+  const formatDisplayDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    const [y, m, d] = dateStr.split("-");
+    return `${m}/${d}/${y}`;
+  };
+
   return (
     <div className="flex h-full bg-[var(--bg-main)] transition-colors duration-300">
       <section className="flex-1 p-10 overflow-y-auto">
@@ -141,65 +142,64 @@ export default function Home() {
         </h2>
 
         <div className="grid gap-4">
-          {isLoaded &&
-            tasks.map(task => (
-              <div
-                key={task.id}
-                className={`group p-5 border border-[var(--border-color)] rounded-2xl bg-[var(--bg-header)] flex items-center justify-between hover:border-indigo-300 transition-all ${
-                  task.completed ? "opacity-60 grayscale-[0.5]" : ""
-                }`}
-              >
-                <div className="flex items-center gap-5">
-                  <button onClick={() => toggleComplete(task.id)}>
-                    {task.completed ? (
-                      <CheckCircle2 size={26} className="text-emerald-500" />
-                    ) : (
-                      <Circle size={26} className="text-slate-200" />
-                    )}
-                  </button>
+          {tasks.map(task => (
+            <div
+              key={task.id}
+              className={`group p-5 border border-[var(--border-color)] rounded-2xl bg-[var(--bg-header)] flex items-center justify-between hover:border-indigo-300 transition-all ${
+                task.completed ? "opacity-60 grayscale-[0.5]" : ""
+              }`}
+            >
+              <div className="flex items-center gap-5">
+                <button onClick={() => toggleComplete(task.id)}>
+                  {task.completed ? (
+                    <CheckCircle2 size={26} className="text-emerald-500" />
+                  ) : (
+                    <Circle size={26} className="text-slate-200" />
+                  )}
+                </button>
 
-                  <div className="flex flex-col">
-                    <span
-                      className={`text-lg font-bold text-[var(--text-strong)] ${
-                        task.completed ? "line-through opacity-50" : ""
-                      }`}
-                    >
-                      {task.title}
+                <div className="flex flex-col">
+                  <span
+                    className={`text-lg font-bold text-[var(--text-strong)] ${
+                      task.completed ? "line-through opacity-50" : ""
+                    }`}
+                  >
+                    {task.title}
+                  </span>
+                  <div className="flex items-center gap-3 mt-1 text-[10px]">
+                    <span className="font-black text-slate-400 uppercase">
+                      {task.class}
                     </span>
-                    <div className="flex items-center gap-3 mt-1 text-[10px]">
-                      <span className="font-black text-slate-400 uppercase">
-                        {task.class}
-                      </span>
-                      <span
-                        className={`px-2 py-0.5 rounded border uppercase ${getPriorityColor(
-                          task.priority
-                        )}`}
-                      >
-                        {task.priority}
-                      </span>
-                      <span className="text-slate-400 italic">
-                        Due: {task.dueDate}
-                      </span>
-                    </div>
+                    <span
+                      className={`px-2 py-0.5 rounded border uppercase ${getPriorityColor(
+                        task.priority
+                      )}`}
+                    >
+                      {task.priority}
+                    </span>
+                    <span className="text-slate-400 italic">
+                      Due: {formatDisplayDate(task.dueDate)}
+                    </span>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => startEdit(task)}
-                    className="p-2 hover:bg-indigo-50 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"
-                  >
-                    <Edit3 size={18} />
-                  </button>
-                  <button
-                    onClick={() => deleteTask(task.id)}
-                    className="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
               </div>
-            ))}
+
+              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => startEdit(task)}
+                  className="p-2 hover:bg-indigo-50 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"
+                >
+                  <Edit3 size={18} />
+                </button>
+                <button
+                  onClick={() => deleteTask(task.id)}
+                  className="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
