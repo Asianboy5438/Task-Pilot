@@ -1,32 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Circle, CheckCircle2, ChevronDown, Trash2, Edit3, X } from "lucide-react";
-
-interface Task {
-  id: number;
-  title: string;
-  class: string;
-  description: string;
-  priority: "High" | "Medium" | "Low";
-  completed: boolean;
-  dueDate: string;
-  dueTime: string; // NEW: stores "HH:MM" in 24hr format
-}
-
-function loadInitialTasks(): Task[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const saved = localStorage.getItem("task-pilot-storage");
-    return saved ? (JSON.parse(saved) as Task[]) : [];
-  } catch {
-    return [];
-  }
-}
+import { useTasks } from "../context/TaskContext";
+import type { Task } from "../context/TaskContext";
 
 export default function Home() {
-  const [tasks, setTasks] = useState<Task[]>(loadInitialTasks);
-  const mountedRef = useRef(false);
+  const { tasks, addTask, updateTask, deleteTask, toggleComplete } = useTasks();
 
   // Form State
   const [title, setTitle] = useState("");
@@ -34,45 +14,26 @@ export default function Home() {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Task["priority"]>("Medium");
   const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState(""); // NEW
+  const [selectedTime, setSelectedTime] = useState("");
 
   // Edit State
   const [editingId, setEditingId] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      return;
-    }
-    localStorage.setItem("task-pilot-storage", JSON.stringify(tasks));
-  }, [tasks]);
 
   const handleSubmit = () => {
     if (!title.trim()) return;
 
     if (editingId) {
-      setTasks(prev =>
-        prev.map(t =>
-          t.id === editingId
-            ? {
-                ...t,
-                title,
-                class: className || "General",
-                description: description || "",
-                priority,
-                dueDate: selectedDate || t.dueDate,
-                dueTime: selectedTime || t.dueTime,
-              }
-            : t
-        )
-      );
+      updateTask(editingId, {
+        title,
+        class: className || "General",
+        description: description || "",
+        priority,
+        dueDate: selectedDate,
+        dueTime: selectedTime,
+      });
       setEditingId(null);
     } else {
-      const newId =
-        tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
-
-      const newTask: Task = {
-        id: newId,
+      addTask({
         title,
         class: className || "General",
         description: description || "",
@@ -80,17 +41,9 @@ export default function Home() {
         completed: false,
         dueDate: selectedDate || new Date().toISOString().split("T")[0],
         dueTime: selectedTime || "",
-      };
-
-      setTasks(prev => [newTask, ...prev]);
+      });
     }
     resetForm();
-  };
-
-  const toggleComplete = (id: number) => {
-    setTasks(prev =>
-      prev.map(t => (t.id === id ? { ...t, completed: !t.completed } : t))
-    );
   };
 
   const startEdit = (task: Task) => {
@@ -103,10 +56,10 @@ export default function Home() {
     setSelectedTime(task.dueTime || "");
   };
 
-  const deleteTask = (id: number) => {
+  const handleDelete = (id: number) => {
     const confirmDelete = window.confirm("Delete this task?");
     if (confirmDelete) {
-      setTasks(prev => prev.filter(t => t.id !== id));
+      deleteTask(id);
       if (editingId === id) resetForm();
     }
   };
@@ -133,7 +86,6 @@ export default function Home() {
     return `${m}/${d}/${y}`;
   };
 
-  // Converts "14:30" → "2:30 PM"
   const formatDisplayTime = (timeStr: string) => {
     if (!timeStr) return "";
     const [hRaw, min] = timeStr.split(":");
@@ -202,7 +154,7 @@ export default function Home() {
                   <Edit3 size={18} />
                 </button>
                 <button
-                  onClick={() => deleteTask(task.id)}
+                  onClick={() => handleDelete(task.id)}
                   className="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
                 >
                   <Trash2 size={18} />
@@ -219,10 +171,7 @@ export default function Home() {
             {editingId ? "Edit Task" : "New Task"}
           </h3>
           {editingId && (
-            <button
-              onClick={resetForm}
-              className="text-slate-400 hover:text-red-500"
-            >
+            <button onClick={resetForm} className="text-slate-400 hover:text-red-500">
               <X size={18} />
             </button>
           )}
@@ -264,8 +213,6 @@ export default function Home() {
               className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40"
             />
           </div>
-
-          {/* Date + Time side by side */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
               Due Date & Time

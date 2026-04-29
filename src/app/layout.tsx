@@ -6,16 +6,15 @@ import "./globals.css";
 import Sidebar from './components/sidebar';
 import RemindersDropdown from './components/remindersDropdown';
 import ProfileDropdown from './components/profileDropdown';
+import { TaskProvider } from '../context/TaskContext';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [userName, setUserName] = useState("Account");
   const pathname = usePathname();
 
-  // Hide header/sidebar on auth pages
   const isAuthPage = pathname === "/login" || pathname === "/register";
 
-  // Read user name from cookie on mount
   useEffect(() => {
     const match = document.cookie.match(/session_name=([^;]+)/);
     if (match) {
@@ -44,12 +43,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="h-full flex overflow-hidden bg-[var(--bg-main)] transition-colors duration-300">
 
-        {/* Only show sidebar when logged in */}
         {!isAuthPage && <Sidebar />}
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-          {/* Only show header when logged in */}
           {!isAuthPage && (
             <header className="h-16 border-b border-[var(--border-color)] flex items-center justify-between pl-16 pr-8 bg-[var(--bg-header)] transition-colors duration-300 z-10">
               
@@ -94,7 +91,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           )}
 
           <main className="flex-1 overflow-y-auto bg-[var(--bg-main)]">
-            {children}
+            {/* TaskProvider wraps only the page content so all pages share the same task list */}
+            <TaskProvider>
+              {children}
+            </TaskProvider>
           </main>
         </div>
       </body>
