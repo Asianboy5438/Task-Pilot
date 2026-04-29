@@ -44,6 +44,7 @@ export default function Home() {
 
   // Mark as loaded after first client render (prevents hydration flash)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoaded(true);
   }, []);
 
