@@ -11,10 +11,9 @@ interface Task {
   priority: "High" | "Medium" | "Low";
   completed: boolean;
   dueDate: string;
+  dueTime: string; // NEW: stores "HH:MM" in 24hr format
 }
 
-// Load from localStorage at module scope — runs client-side only, never on the server.
-// Passed as a lazy initializer to useState so no useEffect + setState is needed.
 function loadInitialTasks(): Task[] {
   if (typeof window === "undefined") return [];
   try {
@@ -27,9 +26,6 @@ function loadInitialTasks(): Task[] {
 
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>(loadInitialTasks);
-
-  // useRef instead of useState — updating a ref never triggers a re-render,
-  // so it never counts as "setState inside an effect".
   const mountedRef = useRef(false);
 
   // Form State
@@ -38,12 +34,11 @@ export default function Home() {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Task["priority"]>("Medium");
   const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState(""); // NEW
 
   // Edit State
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  // Sync to localStorage. On the very first run (mount) we skip the write
-  // by checking the ref, then flip it — no setState anywhere in the effect.
   useEffect(() => {
     if (!mountedRef.current) {
       mountedRef.current = true;
@@ -66,6 +61,7 @@ export default function Home() {
                 description: description || "",
                 priority,
                 dueDate: selectedDate || t.dueDate,
+                dueTime: selectedTime || t.dueTime,
               }
             : t
         )
@@ -83,6 +79,7 @@ export default function Home() {
         priority,
         completed: false,
         dueDate: selectedDate || new Date().toISOString().split("T")[0],
+        dueTime: selectedTime || "",
       };
 
       setTasks(prev => [newTask, ...prev]);
@@ -103,6 +100,7 @@ export default function Home() {
     setDescription(task.description);
     setPriority(task.priority);
     setSelectedDate(task.dueDate);
+    setSelectedTime(task.dueTime || "");
   };
 
   const deleteTask = (id: number) => {
@@ -120,6 +118,7 @@ export default function Home() {
     setDescription("");
     setPriority("Medium");
     setSelectedDate("");
+    setSelectedTime("");
   };
 
   const getPriorityColor = (p: Task["priority"]) => {
@@ -132,6 +131,16 @@ export default function Home() {
     if (!dateStr) return "";
     const [y, m, d] = dateStr.split("-");
     return `${m}/${d}/${y}`;
+  };
+
+  // Converts "14:30" → "2:30 PM"
+  const formatDisplayTime = (timeStr: string) => {
+    if (!timeStr) return "";
+    const [hRaw, min] = timeStr.split(":");
+    const h = parseInt(hRaw, 10);
+    const ampm = h >= 12 ? "PM" : "AM";
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}:${min} ${ampm}`;
   };
 
   return (
@@ -179,6 +188,7 @@ export default function Home() {
                     </span>
                     <span className="text-slate-400 italic">
                       Due: {formatDisplayDate(task.dueDate)}
+                      {task.dueTime ? ` at ${formatDisplayTime(task.dueTime)}` : ""}
                     </span>
                   </div>
                 </div>
@@ -254,16 +264,26 @@ export default function Home() {
               className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40"
             />
           </div>
+
+          {/* Date + Time side by side */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
-              Due Date
+              Due Date & Time
             </label>
-            <input
-              type="date"
-              className="w-full p-3 bg-[var(--bg-avatar)] rounded-xl font-bold text-xs outline-none"
-              value={selectedDate}
-              onChange={e => setSelectedDate(e.target.value)}
-            />
+            <div className="flex gap-2">
+              <input
+                type="date"
+                className="flex-1 p-3 bg-[var(--bg-avatar)] rounded-xl font-bold text-xs outline-none"
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
+              />
+              <input
+                type="time"
+                className="w-[110px] p-3 bg-[var(--bg-avatar)] rounded-xl font-bold text-xs outline-none"
+                value={selectedTime}
+                onChange={e => setSelectedTime(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
