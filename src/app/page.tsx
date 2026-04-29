@@ -14,23 +14,26 @@ interface Task {
 }
 
 export default function Home() {
-  // Initialize from localStorage directly to avoid the useEffect warning
+  // Initialize state with a function to avoid the useEffect warning entirely
   const [tasks, setTasks] = useState<Task[]>([]);
-  
+
+  // Hydrate from localStorage once the component mounts in the browser
+  useEffect(() => {
+    const saved = localStorage.getItem("task-pilot-storage");
+    if (saved) {
+      try {
+        setTasks(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse tasks", e);
+      }
+    }
+  }, []);
+
   const [title, setTitle] = useState("");
   const [className, setClassName] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Task["priority"]>("Medium");
   const [selectedDate, setSelectedDate] = useState(new Date());
-
-  // Load tasks on mount - using a check to ensure we only run in the browser
-  useEffect(() => {
-    const saved = localStorage.getItem("task-pilot-storage");
-    if (saved) {
-      const parsedTasks = JSON.parse(saved);
-      setTasks(parsedTasks);
-    }
-  }, []);
 
   const addTask = () => {
     if (!title.trim()) return;
@@ -59,7 +62,7 @@ export default function Home() {
     setDescription("");
   };
 
-  const getPriorityColor = (p: string) => {
+  const getPriorityColor = (p: Task["priority"]) => {
     if (p === "High") return "text-red-500 bg-red-50 border-red-100";
     if (p === "Medium") return "text-amber-500 bg-amber-50 border-amber-100";
     return "text-emerald-500 bg-emerald-50 border-emerald-100";
@@ -81,7 +84,9 @@ export default function Home() {
                   <span className="text-lg font-bold text-[var(--text-strong)]">{task.title}</span>
                   <div className="flex items-center gap-3 mt-1 text-[10px]">
                     <span className="font-black text-slate-400 uppercase">{task.class}</span>
-                    <span className={`px-2 py-0.5 rounded border uppercase ${getPriorityColor(task.priority)}`}>{task.priority}</span>
+                    <span className={`px-2 py-0.5 rounded border uppercase ${getPriorityColor(task.priority)}`}>
+                      {task.priority}
+                    </span>
                     <span className="text-slate-400 italic">Due: {task.dueDate}</span>
                   </div>
                 </div>
@@ -93,13 +98,24 @@ export default function Home() {
 
       <aside className="w-[360px] p-8 bg-[var(--bg-header)] border-l border-[var(--border-color)] flex flex-col h-full overflow-y-auto no-scrollbar">
         <div className="space-y-6 flex-1">
-          <input className="w-full text-2xl font-black bg-transparent border-b border-slate-100 outline-none pb-2 text-[var(--text-strong)]" placeholder="Task Title..." value={title} onChange={(e) => setTitle(e.target.value)} />
-          <textarea className="w-full text-xs font-medium bg-[var(--bg-avatar)] border rounded-xl p-4 min-h-[100px] outline-none" placeholder="Add details..." value={description} onChange={(e) => setDescription(e.target.value)} />
+          <input 
+            className="w-full text-2xl font-black bg-transparent border-b border-slate-100 outline-none pb-2 text-[var(--text-strong)]" 
+            placeholder="Task Title..." 
+            value={title} 
+            onChange={(e) => setTitle(e.target.value)} 
+          />
+          
+          <textarea 
+            className="w-full text-xs font-medium bg-[var(--bg-avatar)] border rounded-xl p-4 min-h-[100px] outline-none" 
+            placeholder="Add details..." 
+            value={description} 
+            onChange={(e) => setDescription(e.target.value)} 
+          />
 
           <div className="relative">
             <select 
               value={priority} 
-              // FIXED: Removed 'any' and used type casting
+              // FIXED: Strict type casting instead of 'any'
               onChange={(e) => setPriority(e.target.value as Task["priority"])} 
               className={`w-full p-3.5 rounded-xl border font-bold text-[10px] uppercase tracking-widest outline-none appearance-none ${getPriorityColor(priority)}`}
             >
@@ -111,11 +127,18 @@ export default function Home() {
           </div>
 
           <div className="p-4 border border-slate-100 rounded-2xl bg-[var(--bg-avatar)]">
-             <input type="date" className="w-full bg-transparent font-bold text-xs" onChange={(e) => setSelectedDate(new Date(e.target.value))} />
+             <input 
+               type="date" 
+               className="w-full bg-transparent font-bold text-xs" 
+               onChange={(e) => setSelectedDate(new Date(e.target.value))} 
+             />
           </div>
         </div>
 
-        <button onClick={addTask} className="w-full mt-8 py-5 bg-indigo-600 text-white font-black text-[11px] uppercase tracking-[0.25em] rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+        <button 
+          onClick={addTask} 
+          className="w-full mt-8 py-5 bg-indigo-600 text-white font-black text-[11px] uppercase tracking-[0.25em] rounded-2xl hover:bg-indigo-700 transition-all shadow-lg"
+        >
           CREATE TASK +
         </button>
       </aside>
