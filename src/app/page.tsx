@@ -14,7 +14,6 @@ interface Task {
 }
 
 export default function Home() {
-  // Lazy initialization
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -28,16 +27,20 @@ export default function Home() {
   // Edit State
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  // Load from localStorage safely
+  // Load from localStorage safely on mount
   useEffect(() => {
     const saved = localStorage.getItem("task-pilot-storage");
     if (saved) {
-      try { setTasks(JSON.parse(saved)); } catch (e) { console.error(e); }
+      try { 
+        setTasks(JSON.parse(saved)); 
+      } catch (e) { 
+        console.error("Failed to load tasks:", e); 
+      }
     }
     setIsLoaded(true);
   }, []);
 
-  // Sync back to localStorage
+  // Sync back to localStorage whenever tasks change
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem("task-pilot-storage", JSON.stringify(tasks));
@@ -48,27 +51,31 @@ export default function Home() {
     if (!title.trim()) return;
 
     if (editingId) {
-      // Update existing
+      // Update existing task
       setTasks(prev => prev.map(t => t.id === editingId ? {
         ...t,
         title,
         class: className || "General",
-        description,
+        description: description || "",
         priority,
         dueDate: selectedDate || t.dueDate
       } : t));
       setEditingId(null);
     } else {
-      // Create new
+      // Create new task
+      // eslint-disable-next-line react-hooks/purity
+      const uniqueId = Date.now(); 
+      
       const newTask: Task = {
-        id: Date.now(),
+        id: uniqueId,
         title,
         class: className || "General",
-        description,
+        description: description || "",
         priority,
         completed: false,
         dueDate: selectedDate || new Date().toISOString().split('T')[0],
       };
+      
       setTasks(prev => [newTask, ...prev]);
     }
 
@@ -85,8 +92,11 @@ export default function Home() {
   };
 
   const deleteTask = (id: number) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
-    if (editingId === id) resetForm();
+    const confirmDelete = window.confirm("Are you sure you want to delete this task?");
+    if (confirmDelete) {
+      setTasks(prev => prev.filter(t => t.id !== id));
+      if (editingId === id) resetForm();
+    }
   };
 
   const resetForm = () => {
@@ -110,6 +120,9 @@ export default function Home() {
         <h2 className="text-4xl font-black tracking-tighter text-[var(--text-strong)] mb-10">Task Overview</h2>
         
         <div className="grid gap-4">
+          {tasks.length === 0 && isLoaded && (
+            <p className="text-slate-400 font-medium italic">No tasks found. Create one to get started!</p>
+          )}
           {tasks.map((task) => (
             <div key={task.id} className="group p-5 border border-[var(--border-color)] rounded-2xl bg-[var(--bg-header)] flex items-center justify-between hover:border-indigo-300 transition-all">
               <div className="flex items-center gap-5">
@@ -126,7 +139,6 @@ export default function Home() {
                 </div>
               </div>
               
-              {/* Action Buttons: Visible on Hover */}
               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
                   onClick={() => startEdit(task)} 
@@ -146,68 +158,68 @@ export default function Home() {
         </div>
       </section>
 
-      <aside className="w-[360px] p-8 bg-[var(--bg-header)] border-l border-[var(--border-color)] space-y-6">
+      <aside className="w-[360px] p-8 bg-[var(--bg-header)] border-l border-[var(--border-color)] space-y-6 flex flex-col h-full">
         <div className="flex items-center justify-between">
           <h3 className="font-black text-sm uppercase tracking-widest text-slate-400">
             {editingId ? "Edit Task" : "New Task"}
           </h3>
           {editingId && (
-            <button onClick={resetForm} className="text-slate-400 hover:text-red-500 transition-colors">
+            <button onClick={resetForm} className="text-slate-400 hover:text-red-500">
               <X size={18}/>
             </button>
           )}
         </div>
 
-        <input 
-          className="w-full text-2xl font-black bg-transparent border-b border-slate-100 outline-none pb-2 text-[var(--text-strong)]" 
-          placeholder="Task Title..." 
-          value={title} 
-          onChange={(e) => setTitle(e.target.value)} 
-        />
-
-        <input 
-          className="w-full text-xs font-bold bg-transparent border-b border-slate-100 outline-none pb-2" 
-          placeholder="Classification (e.g. CGT 390)" 
-          value={className} 
-          onChange={(e) => setClassName(e.target.value)} 
-        />
-        
-        <textarea 
-          className="w-full text-xs font-medium bg-[var(--bg-avatar)] border rounded-xl p-4 min-h-[100px] outline-none" 
-          placeholder="Add task details..." 
-          value={description} 
-          onChange={(e) => setDescription(e.target.value)} 
-        />
-
-        <div className="relative">
-          <select 
-            value={priority} 
-            onChange={(e) => setPriority(e.target.value as Task["priority"])} 
-            className={`w-full p-3.5 rounded-xl border font-bold text-[10px] uppercase appearance-none outline-none ${getPriorityColor(priority)}`}
-          >
-            <option value="High">High</option>
-            <option value="Medium">Medium</option>
-            <option value="Low">Low</option>
-          </select>
-          <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40" />
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Due Date</label>
+        <div className="space-y-4 flex-1">
           <input 
-            type="date" 
-            className="w-full p-3 bg-[var(--bg-avatar)] rounded-xl font-bold text-xs outline-none border border-transparent focus:border-indigo-500/30 transition-all" 
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)} 
+            className="w-full text-2xl font-black bg-transparent border-b border-slate-100 outline-none pb-2 text-[var(--text-strong)]" 
+            placeholder="Task Title..." 
+            value={title} 
+            onChange={(e) => setTitle(e.target.value)} 
           />
+
+          <input 
+            className="w-full text-xs font-bold bg-transparent border-b border-slate-100 outline-none pb-2" 
+            placeholder="Class (e.g. CGT 390)" 
+            value={className} 
+            onChange={(e) => setClassName(e.target.value)} 
+          />
+          
+          <textarea 
+            className="w-full text-xs font-medium bg-[var(--bg-avatar)] border rounded-xl p-4 min-h-[100px] outline-none" 
+            placeholder="Add task details..." 
+            value={description} 
+            onChange={(e) => setDescription(e.target.value)} 
+          />
+
+          <div className="relative">
+            <select 
+              value={priority} 
+              onChange={(e) => setPriority(e.target.value as Task["priority"])} 
+              className={`w-full p-3.5 rounded-xl border font-bold text-[10px] uppercase appearance-none outline-none ${getPriorityColor(priority)}`}
+            >
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Due Date</label>
+            <input 
+              type="date" 
+              className="w-full p-3 bg-[var(--bg-avatar)] rounded-xl font-bold text-xs outline-none" 
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)} 
+            />
+          </div>
         </div>
 
         <button 
           onClick={handleSubmit} 
           className={`w-full py-5 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl transition-all shadow-lg ${
-            editingId 
-              ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' 
-              : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100'
+            editingId ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700'
           }`}
         >
           {editingId ? "UPDATE TASK ✓" : "CREATE TASK +"}
