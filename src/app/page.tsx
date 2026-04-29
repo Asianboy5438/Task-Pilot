@@ -3,19 +3,17 @@
 import { useState } from "react";
 import { Plus, Circle, CheckCircle2, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 
-// 1. Ensure Interface matches exactly what you use
 interface Task {
   id: number;
   title: string;
   class: string;
-  description: string; // Added
+  description: string;
   priority: "High" | "Medium" | "Low";
   completed: boolean;
   dueDate: string;
 }
 
 export default function Home() {
-  // 2. Initial state MUST include a description now or it will fail to compile
   const [tasks, setTasks] = useState<Task[]>([
     { 
       id: 1, 
@@ -48,7 +46,7 @@ export default function Home() {
       id: Date.now(),
       title,
       class: className || "General",
-      description, // 3. Pass the description here
+      description,
       priority,
       completed: false,
       dueDate: `${selectedDate.getMonth() + 1}/${selectedDate.getDate()}`,
@@ -96,7 +94,6 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              {/* 4. Display the description in the card if it exists */}
               {task.description && (
                 <p className="mt-3 ml-11 text-xs text-slate-500 leading-relaxed max-w-2xl">{task.description}</p>
               )}
@@ -107,77 +104,105 @@ export default function Home() {
 
       {/* --- RIGHT SIDEBAR --- */}
       <aside className="w-[360px] p-6 bg-[var(--bg-header)] border-l border-[var(--border-color)] flex flex-col h-full overflow-y-auto no-scrollbar">
-        <div className="flex items-center gap-2 mb-6">
-          <div className="p-1.5 bg-indigo-600 rounded-lg text-white"><Plus size={16} strokeWidth={3} /></div>
+        {/* Changed from 'New Mandate' to 'Create Task' */}
+        <div className="flex items-center gap-2 mb-8">
+          <div className="p-1.5 bg-indigo-600 rounded-lg text-white">
+            <Plus size={16} strokeWidth={3} />
+          </div>
           <h3 className="font-black text-xs uppercase tracking-[0.2em] text-[var(--text-strong)]">Create Task</h3>
         </div>
 
-        <div className="space-y-4 flex-1">
-          <div className="space-y-3">
+        <div className="space-y-6 flex-1">
+          {/* Inputs Group */}
+          <div className="space-y-4">
             <input 
-              className="w-full text-lg font-bold bg-transparent border-b border-slate-100 outline-none focus:border-indigo-500 pb-1 text-[var(--text-strong)]" 
-              placeholder="Task Title..." value={title} onChange={(e) => setTitle(e.target.value)}
+              className="w-full text-xl font-bold bg-transparent border-b border-slate-100 outline-none focus:border-indigo-500 pb-2 text-[var(--text-strong)] placeholder:text-slate-300" 
+              placeholder="Task Title..." 
+              value={title} 
+              onChange={(e) => setTitle(e.target.value)}
             />
             <input 
-              className="w-full text-xs font-semibold bg-transparent border-b border-slate-100 outline-none focus:border-indigo-500 pb-1 text-slate-500" 
-              placeholder="Classification..." value={className} onChange={(e) => setClassName(e.target.value)}
+              className="w-full text-xs font-semibold bg-transparent border-b border-slate-100 outline-none focus:border-indigo-500 pb-2 text-slate-500 placeholder:text-slate-300" 
+              placeholder="Classification (e.g. Starbucks Redesign)" 
+              value={className} 
+              onChange={(e) => setClassName(e.target.value)}
             />
           </div>
 
-          <div className="space-y-1.5">
+          {/* 1. Added Description Textarea here */}
+          <div className="space-y-2">
             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Description</label>
             <textarea 
-              className="w-full text-xs font-medium bg-[var(--bg-avatar)] border border-slate-100 rounded-xl p-3 outline-none focus:border-indigo-500 min-h-[70px] resize-none text-slate-600"
-              placeholder="Add details..."
+              className="w-full text-xs font-medium bg-[var(--bg-avatar)] border border-slate-100 rounded-xl p-3 outline-none focus:border-indigo-500 min-h-[80px] resize-none text-slate-600"
+              placeholder="Add task details or sub-tasks..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
 
-          <div className="space-y-1.5">
+          {/* 2. Relocated Priority Dropdown here */}
+          <div className="space-y-2">
             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Urgency Level</label>
             <div className="relative">
               <select 
                 value={priority}
-                onChange={(e) => setPriority(e.target.value as any)}
-                className={`w-full p-2.5 rounded-xl border appearance-none font-bold text-[10px] uppercase tracking-widest outline-none cursor-pointer transition-all ${getPriorityColor(priority)}`}
+                // Cast to specific strings to avoid ESLint 'any' errors
+                onChange={(e) => setPriority(e.target.value as "High" | "Medium" | "Low")}
+                className={`w-full p-3 rounded-xl border appearance-none font-bold text-[10px] uppercase tracking-widest outline-none cursor-pointer transition-all ${getPriorityColor(priority)}`}
               >
                 <option value="High">High Priority</option>
                 <option value="Medium">Medium Priority</option>
                 <option value="Low">Low Priority</option>
               </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          {/* Time Picker */}
+          <div className="space-y-2">
             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Target Time</label>
             <div className="flex gap-2">
-              <select value={selectedHour} onChange={(e) => setSelectedHour(e.target.value)} className="flex-1 p-2 rounded-xl bg-[var(--bg-avatar)] border border-slate-100 text-xs font-bold">{Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0')).map(h => <option key={h} value={h}>{h}</option>)}</select>
-              <select value={selectedMin} onChange={(e) => setSelectedMin(e.target.value)} className="flex-1 p-2 rounded-xl bg-[var(--bg-avatar)] border border-slate-100 text-xs font-bold">{["00", "15", "30", "45"].map(m => <option key={m} value={m}>{m}</option>)}</select>
+              <select value={selectedHour} onChange={(e) => setSelectedHour(e.target.value)} className="flex-1 p-2.5 rounded-xl bg-[var(--bg-avatar)] border border-slate-100 text-xs font-bold text-center outline-none">
+                {Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0')).map(h => <option key={h} value={h}>{h}</option>)}
+              </select>
+              <span className="flex items-center text-slate-300 font-bold">:</span>
+              <select value={selectedMin} onChange={(e) => setSelectedMin(e.target.value)} className="flex-1 p-2.5 rounded-xl bg-[var(--bg-avatar)] border border-slate-100 text-xs font-bold text-center outline-none">
+                {["00", "15", "30", "45"].map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
             </div>
           </div>
 
-          <div className="p-3 border border-slate-100 rounded-2xl bg-[var(--bg-avatar)]">
-             {/* Calendar code remains the same as before */}
-             <div className="flex justify-between items-center mb-2">
-              <span className="text-[9px] font-black uppercase tracking-widest text-indigo-600">{selectedDate.toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
-              <div className="flex gap-1">
-                <button onClick={() => setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() - 1)))} className="p-1 text-slate-400"><ChevronLeft size={12}/></button>
-                <button onClick={() => setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() + 1)))} className="p-1 text-slate-400"><ChevronRight size={12}/></button>
+          {/* Calendar */}
+          <div className="p-4 border border-slate-100 rounded-2xl bg-[var(--bg-avatar)]">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">
+                {selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </span>
+              <div className="flex gap-2">
+                <button onClick={() => setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() - 1)))} className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"><ChevronLeft size={14}/></button>
+                <button onClick={() => setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() + 1)))} className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"><ChevronRight size={14}/></button>
               </div>
             </div>
             <div className="grid grid-cols-7 gap-1 text-center">
-              {['S','M','T','W','T','F','S'].map(day => <span key={day} className="text-[8px] font-black text-slate-300">{day}</span>)}
+              {['S','M','T','W','T','F','S'].map(day => <span key={day} className="text-[8px] font-black text-slate-300 pb-1">{day}</span>)}
               {blanks.map(b => <span key={`b-${b}`} />)}
               {days.map(d => (
-                <button key={d} onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), d))} className={`py-1 text-[9px] font-bold rounded-md ${selectedDate.getDate() === d ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-white'}`}>{d}</button>
+                <button 
+                  key={d} 
+                  onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), d))} 
+                  className={`py-1.5 text-[9px] font-bold rounded-lg transition-all ${selectedDate.getDate() === d ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'text-slate-500 hover:bg-white'}`}
+                >
+                  {d}
+                </button>
               ))}
             </div>
           </div>
         </div>
 
-        <button onClick={addTask} className="w-full mt-6 py-4 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-2">
+        <button 
+          onClick={addTask} 
+          className="w-full mt-8 py-4 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-100 transition-all active:scale-[0.98]"
+        >
           <span>Create Task</span>
           <Plus size={14} strokeWidth={3} />
         </button>
