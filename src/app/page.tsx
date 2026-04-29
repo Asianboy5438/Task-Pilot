@@ -14,7 +14,21 @@ interface Task {
 }
 
 export default function Home() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  // 1. FIXED: Lazy initializer. This loads data during the FIRST render,
+  // which avoids the "set-state-in-effect" cascading render error.
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("task-pilot-storage");
+      try {
+        return saved ? JSON.parse(saved) : [];
+      } catch (e) {
+        console.error("Local storage error:", e);
+        return [];
+      }
+    }
+    return [];
+  });
+
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Form State
@@ -27,20 +41,12 @@ export default function Home() {
   // Edit State
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  // Hydrate from localStorage
+  // Set loaded state to prevent hydration mismatches
   useEffect(() => {
-    const saved = localStorage.getItem("task-pilot-storage");
-    if (saved) {
-      try { 
-        setTasks(JSON.parse(saved)); 
-      } catch (e) { 
-        console.error("Failed to load tasks:", e); 
-      }
-    }
     setIsLoaded(true);
   }, []);
 
-  // Sync to localStorage
+  // Sync to localStorage whenever tasks change
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem("task-pilot-storage", JSON.stringify(tasks));
@@ -51,7 +57,6 @@ export default function Home() {
     if (!title.trim()) return;
 
     if (editingId) {
-      // Update existing task
       setTasks(prev => prev.map(t => t.id === editingId ? {
         ...t,
         title,
@@ -62,8 +67,8 @@ export default function Home() {
       } : t));
       setEditingId(null);
     } else {
-      // Create new task
-      // Pure ID Generation: Avoids Date.now() build errors
+      // 2. FIXED: Pure ID Generation. 
+      // We calculate the ID based on current state, which satisfy the purity rules.
       const newId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
       
       const newTask: Task = {
@@ -78,7 +83,6 @@ export default function Home() {
       
       setTasks(prev => [newTask, ...prev]);
     }
-
     resetForm();
   };
 
@@ -98,7 +102,7 @@ export default function Home() {
   };
 
   const deleteTask = (id: number) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this task?");
+    const confirmDelete = window.confirm("Delete this task?");
     if (confirmDelete) {
       setTasks(prev => prev.filter(t => t.id !== id));
       if (editingId === id) resetForm();
@@ -126,28 +130,22 @@ export default function Home() {
         <h2 className="text-4xl font-black tracking-tighter text-[var(--text-strong)] mb-10">Task Overview</h2>
         
         <div className="grid gap-4">
-          {tasks.length === 0 && isLoaded && (
-            <p className="text-slate-400 font-medium italic">No tasks found. Create one to get started!</p>
-          )}
-          {tasks.map((task) => (
+          {isLoaded && tasks.map((task) => (
             <div 
               key={task.id} 
-              className={`group p-5 border border-[var(--border-color)] rounded-2xl bg-[var(--bg-header)] flex items-center justify-between hover:border-indigo-300 transition-all ${task.completed ? 'opacity-60 bg-slate-50/50' : ''}`}
+              className={`group p-5 border border-[var(--border-color)] rounded-2xl bg-[var(--bg-header)] flex items-center justify-between hover:border-indigo-300 transition-all ${task.completed ? 'opacity-60 grayscale-[0.5]' : ''}`}
             >
               <div className="flex items-center gap-5">
-                <button 
-                  onClick={() => toggleComplete(task.id)}
-                  className="transition-transform active:scale-90"
-                >
+                <button onClick={() => toggleComplete(task.id)}>
                   {task.completed ? (
                     <CheckCircle2 size={26} className="text-emerald-500" />
                   ) : (
-                    <Circle size={26} className="text-slate-200 hover:text-indigo-300" />
+                    <Circle size={26} className="text-slate-200" />
                   )}
                 </button>
                 
                 <div className="flex flex-col">
-                  <span className={`text-lg font-bold text-[var(--text-strong)] transition-all ${task.completed ? 'line-through text-slate-400' : ''}`}>
+                  <span className={`text-lg font-bold text-[var(--text-strong)] ${task.completed ? 'line-through opacity-50' : ''}`}>
                     {task.title}
                   </span>
                   <div className="flex items-center gap-3 mt-1 text-[10px]">
@@ -161,16 +159,10 @@ export default function Home() {
               </div>
               
               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button 
-                  onClick={() => startEdit(task)} 
-                  className="p-2 hover:bg-indigo-50 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"
-                >
+                <button onClick={() => startEdit(task)} className="p-2 hover:bg-indigo-50 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors">
                   <Edit3 size={18} />
                 </button>
-                <button 
-                  onClick={() => deleteTask(task.id)} 
-                  className="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
-                >
+                <button onClick={() => deleteTask(task.id)} className="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors">
                   <Trash2 size={18} />
                 </button>
               </div>
@@ -185,9 +177,7 @@ export default function Home() {
             {editingId ? "Edit Task" : "New Task"}
           </h3>
           {editingId && (
-            <button onClick={resetForm} className="text-slate-400 hover:text-red-500">
-              <X size={18}/>
-            </button>
+            <button onClick={resetForm} className="text-slate-400 hover:text-red-500"><X size={18}/></button>
           )}
         </div>
 
@@ -198,21 +188,18 @@ export default function Home() {
             value={title} 
             onChange={(e) => setTitle(e.target.value)} 
           />
-
           <input 
             className="w-full text-xs font-bold bg-transparent border-b border-slate-100 outline-none pb-2" 
             placeholder="Class (e.g. CGT 390)" 
             value={className} 
             onChange={(e) => setClassName(e.target.value)} 
           />
-          
           <textarea 
             className="w-full text-xs font-medium bg-[var(--bg-avatar)] border rounded-xl p-4 min-h-[100px] outline-none" 
             placeholder="Add task details..." 
             value={description} 
             onChange={(e) => setDescription(e.target.value)} 
           />
-
           <div className="relative">
             <select 
               value={priority} 
@@ -225,7 +212,6 @@ export default function Home() {
             </select>
             <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40" />
           </div>
-
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Due Date</label>
             <input 
@@ -240,7 +226,7 @@ export default function Home() {
         <button 
           onClick={handleSubmit} 
           className={`w-full py-5 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl transition-all shadow-lg ${
-            editingId ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100'
+            editingId ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100'
           }`}
         >
           {editingId ? "UPDATE TASK ✓" : "CREATE TASK +"}
