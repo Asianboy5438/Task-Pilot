@@ -14,7 +14,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const data = await req.json();
 
-  // Convert isComplete boolean if present
   if (data.isComplete !== undefined) {
     await prisma.assignment.updateMany({
       where: { id, userId },
@@ -26,6 +25,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: {
         title: data.title,
         notes: data.notes,
+        className: data.className,
+        dueTime: data.dueTime,
         priority: data.priority,
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
       },

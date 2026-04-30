@@ -22,12 +22,14 @@ export async function POST(req: NextRequest) {
   const userId = getUserId(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { title, notes, dueDate, priority } = await req.json();
+  const { title, notes, dueDate, priority, className, dueTime } = await req.json();
   const assignment = await prisma.assignment.create({
     data: {
       userId,
       title,
       notes: notes || "",
+      className: className || "",
+      dueTime: dueTime || "",
       dueDate: dueDate ? new Date(dueDate) : new Date(),
       priority: priority || "MEDIUM",
     },

@@ -7,6 +7,7 @@ interface Task {
   id: string;
   title: string;
   class?: string;
+  className?: string;
   notes?: string;
   description?: string;
   priority: "HIGH" | "MEDIUM" | "LOW" | "High" | "Medium" | "Low";
@@ -106,11 +107,13 @@ export default function Home() {
           notes: description,
           priority: dbPriority,
           dueDate: selectedDate,
+          className: className || "General",
+          dueTime: selectedTime || "",
         }),
       });
       setTasks(prev => prev.map(t =>
         t.id === editingId
-          ? { ...t, title, class: className || "General", notes: description, priority: dbPriority, dueDate: selectedDate, dueTime: selectedTime }
+          ? { ...t, title, className: className || "General", notes: description, priority: dbPriority, dueDate: selectedDate, dueTime: selectedTime }
           : t
       ));
       setEditingId(null);
@@ -123,12 +126,13 @@ export default function Home() {
           notes: description,
           priority: dbPriority,
           dueDate: selectedDate || new Date().toISOString().split("T")[0],
+          className: className || "General",
+          dueTime: selectedTime || "",
         }),
       });
       if (res.ok) {
         const newTask = await res.json();
-        // Attach UI-only fields locally
-        setTasks(prev => [{ ...newTask, class: className || "General", dueTime: selectedTime }, ...prev]);
+        setTasks(prev => [newTask, ...prev]);  // no more local patching needed
       }
     }
     resetForm();
@@ -151,7 +155,7 @@ export default function Home() {
   const startEdit = (task: Task) => {
     setEditingId(task.id);
     setTitle(task.title);
-    setClassName(task.class || "");
+    setClassName(task.className || task.class || "");
     setDescription(task.notes || task.description || "");
     setPriority(normalizePriority(task.priority) as "High" | "Medium" | "Low");
     setSelectedDate(task.dueDate ? task.dueDate.split("T")[0] : "");
@@ -323,8 +327,8 @@ export default function Home() {
                       {task.title}
                     </span>
                     <div className="flex items-center gap-3 mt-1 text-[10px]">
-                      {task.class && (
-                        <span className="font-black text-slate-400 uppercase">{task.class}</span>
+                      {(task.className || task.class) && (
+                        <span className="font-black text-slate-400 uppercase">{task.className || task.class}</span>
                       )}
                       <span className={`px-2 py-0.5 rounded border uppercase ${getPriorityColor(task.priority)}`}>
                         {normalizePriority(task.priority)}

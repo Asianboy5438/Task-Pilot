@@ -39,6 +39,8 @@ model Assignment {
   classId       String?
   title         String
   notes         String?
+  className     String?
+  dueTime       String?
   dueDate       DateTime
   priority      Priority      @default(MEDIUM)
   isComplete    Boolean       @default(false)
