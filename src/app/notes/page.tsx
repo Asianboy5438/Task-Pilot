@@ -106,8 +106,14 @@ export default function NotesPage() {
   const getPos = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  };
+    // Scale mouse position to match canvas internal resolution
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY,
+        };
+    };
 
   const startDraw = (e: React.MouseEvent<HTMLCanvasElement>) => {
     drawing.current = true;
@@ -324,9 +330,36 @@ export default function NotesPage() {
 
               {!isDrawing && (
                 <div className="flex items-center gap-1">
-                  <button className="p-2 hover:bg-[var(--bg-avatar)] rounded-lg text-slate-400 hover:text-[var(--text-strong)] transition-colors"><Bold size={15} /></button>
-                  <button className="p-2 hover:bg-[var(--bg-avatar)] rounded-lg text-slate-400 hover:text-[var(--text-strong)] transition-colors"><Italic size={15} /></button>
-                  <button className="p-2 hover:bg-[var(--bg-avatar)] rounded-lg text-slate-400 hover:text-[var(--text-strong)] transition-colors"><Underline size={15} /></button>
+                    <button
+                        onMouseDown={e => { e.preventDefault(); document.execCommand("bold"); }}
+                        className="p-2 hover:bg-[var(--bg-avatar)] rounded-lg text-slate-400 hover:text-[var(--text-strong)] transition-colors font-bold"
+                        >
+                        <Bold size={15} />
+                    </button>
+                    <button
+                        onMouseDown={e => { e.preventDefault(); document.execCommand("italic"); }}
+                        className="p-2 hover:bg-[var(--bg-avatar)] rounded-lg text-slate-400 hover:text-[var(--text-strong)] transition-colors"
+                        >
+                        <Italic size={15} />
+                    </button>
+                    <button
+                        onMouseDown={e => { e.preventDefault(); document.execCommand("underline"); }}
+                        className="p-2 hover:bg-[var(--bg-avatar)] rounded-lg text-slate-400 hover:text-[var(--text-strong)] transition-colors"
+                        >
+                        <Underline size={15} />
+                    </button>
+                    <button
+                        onMouseDown={e => { e.preventDefault(); document.execCommand("indent"); }}
+                        className="p-2 hover:bg-[var(--bg-avatar)] rounded-lg text-slate-400 hover:text-[var(--text-strong)] transition-colors"
+                        >
+                        <span className="text-xs font-bold px-1">→</span>
+                    </button>
+                    <button
+                        onMouseDown={e => { e.preventDefault(); document.execCommand("outdent"); }}
+                        className="p-2 hover:bg-[var(--bg-avatar)] rounded-lg text-slate-400 hover:text-[var(--text-strong)] transition-colors"
+                        >
+                        <span className="text-xs font-bold px-1">←</span>
+                    </button>
                 </div>
               )}
 
@@ -370,12 +403,21 @@ export default function NotesPage() {
 
             <div className="flex-1 overflow-hidden relative">
               {!isDrawing ? (
-                <textarea
-                  value={editContent}
-                  onChange={e => { setEditContent(e.target.value); autoSave(editTitle, e.target.value); }}
-                  placeholder="Start typing your note..."
-                  className="w-full h-full px-10 py-4 bg-[var(--bg-main)] text-[var(--text-strong)] text-sm leading-relaxed resize-none outline-none placeholder-slate-600"
-                />
+                <div className="flex-1 overflow-hidden flex flex-col">
+                    <div
+                        id="note-editor"
+                        contentEditable
+                        suppressContentEditableWarning
+                        onInput={e => {
+                        const html = (e.currentTarget as HTMLDivElement).innerHTML;
+                        setEditContent(html);
+                        autoSave(editTitle, html);
+                        }}
+                        dangerouslySetInnerHTML={{ __html: editContent }}
+                        className="flex-1 w-full px-10 py-4 bg-[var(--bg-main)] text-[var(--text-strong)] text-sm leading-relaxed outline-none overflow-y-auto"
+                        style={{ minHeight: "100%" }}
+                    />
+                </div>
               ) : (
                 <canvas
                   ref={canvasRef}
