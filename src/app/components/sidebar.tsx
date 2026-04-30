@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { NotebookPen } from "lucide-react";
 import Link from "next/link";
 import { 
   Menu, 
@@ -61,8 +62,8 @@ export default function Sidebar() {
           <p className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Navigation</p>
           
           <NavItem href="/" icon={<LayoutDashboard size={18} />} label="Dashboard" close={() => setIsOpen(false)} />
-          {/* Urgent Tasks and Tasks removed for a cleaner experience */}
           <NavItem href="/calendar" icon={<Calendar size={18} />} label="Calendar" close={() => setIsOpen(false)} />
+          <NavItem href="/notes" icon={<NotebookPen size={18} />} label="Notes" close={() => setIsOpen(false)} />
           
           <div className="my-4 border-t border-[var(--border-color)]" />
           
