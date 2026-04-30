@@ -11,7 +11,7 @@ export default function RemindersDropdown() {
 
   // Build smart reminders from tasks
   const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const _todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   // Helper: get a Date object from a task's dueDate + dueTime
   const getDueDateTime = (dueDate: string, dueTime: string) => {

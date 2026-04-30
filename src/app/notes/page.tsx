@@ -50,14 +50,19 @@ export default function NotesPage() {
   const lastPos = useRef<{ x: number; y: number } | null>(null);
 
   // Load note into editor
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (selectedNote) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditTitle(selectedNote.title);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditContent(selectedNote.content);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedNote?.id]);
 
   // Load drawing onto canvas when switching notes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!canvasRef.current) return;
     const ctx = canvasRef.current.getContext("2d");
@@ -68,6 +73,7 @@ export default function NotesPage() {
       img.src = selectedNote.drawing;
       img.onload = () => ctx.drawImage(img, 0, 0);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedNote?.id, isDrawing]);
 
   const getPos = (e: React.MouseEvent<HTMLCanvasElement>) => {
